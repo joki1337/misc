@@ -1,6 +1,7 @@
 {
 	"auto_complete_commit_on_tab": true,
 	"auto_match_enabled": false,
+	"auto_complete": false,
 	"caret_extra_width": 1,
 	"caret_style": "solid",
 	"color_scheme": "Packages/Theme - Spacegray/base16-ocean.dark.tmTheme",
@@ -16,6 +17,7 @@
 	"line_padding_top": 1,
 	"show_encoding": true,
 	"show_line_endings": true,
+	"default_line_ending": "unix",
 	"spacegray_fileicons": true,
 	"theme": "Spacegray.sublime-theme",
 	"translate_tabs_to_spaces": true,
