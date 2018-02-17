@@ -1,25 +1,18 @@
 {
+	"color_scheme": "Packages/Color Scheme - Default/Mariana.tmTheme",
+	"theme": "Adaptive.sublime-theme",
 	"auto_complete_commit_on_tab": true,
 	"auto_match_enabled": false,
 	"auto_complete": false,
 	"caret_extra_width": 1,
 	"caret_style": "solid",
-	"color_scheme": "Packages/Theme - Spacegray/base16-ocean.dark.tmTheme",
-	"font_size": 15,
 	"gutter": true,
 	"highlight_line": true,
-	"ignored_packages":
-	[
-		"Vintage"
-	],
 	"line_numbers": false,
 	"line_padding_bottom": 1,
 	"line_padding_top": 1,
 	"show_encoding": true,
 	"show_line_endings": true,
 	"default_line_ending": "unix",
-	"spacegray_fileicons": true,
-	"theme": "Spacegray.sublime-theme",
-	"translate_tabs_to_spaces": true,
 	"show_definitions": false
 }
