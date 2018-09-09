@@ -1,5 +1,4 @@
 [
     { "keys": ["f9"], "command": "pass" },
     { "keys": ["ctrl+f9"], "command": "pass" },
-
 ]

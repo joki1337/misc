@@ -1,0 +1,7 @@
+[
+    { "keys": ["ctrl+#"], "command": "toggle_comment", "args": { "block": false } },
+    { "keys": ["ctrl+shift+#"], "command": "toggle_comment", "args": { "block": true } },
+
+    { "keys": ["f9"], "command": "pass", "args": {} },
+    { "keys": ["ctrl+f9"], "command": "pass", "args": {} },
+]
