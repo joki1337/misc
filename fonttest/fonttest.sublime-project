@@ -1,0 +1,25 @@
+{
+    "folders":
+    [
+        {
+            "path": "."
+        }
+    ],
+    "build_systems":
+    [
+        {
+            "name": "Build (Debug)",
+            "working_dir": "$project_path",
+            "file_regex": "^(..[^:]*):([0-9]+):?([0-9]+)?:? (.*)$",
+            "cmd": ["./build",]
+            // "shell_cmd": "./build",
+            // "variants":
+            // [
+            //     {
+            //         "name": "and Run",
+            //         "shell_cmd": "./build debug --run",
+            //     }
+            // ]
+        }
+    ]
+}
