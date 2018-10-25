@@ -50,7 +50,7 @@ struct Offscreen_Buffer
     }
 };
 
-const char lorem[] = "Lorem ipsum dolor sit amet";
+const char lorem[] = "Lorem g";
 
 int main(int argc, char **argv)
 {
@@ -65,13 +65,13 @@ int main(int argc, char **argv)
             stbtt_GetFontOffsetForIndex(ttf_buffer, 0)));
     printf("number of glyphs in ttf: %d\n", fontinfo.numGlyphs);
 
-    Offscreen_Buffer bakedfont(400, 400);
+    Offscreen_Buffer bakedfont(2000, 2000);
 
 
 
     stbtt_bakedchar ttfchars[fontinfo.numGlyphs];
 
-    float font_scale = 20.0f;
+    float font_scale = 60.0f;
 
     Assert(stbtt_BakeFontBitmap(
         ttf_buffer, 0,
@@ -86,50 +86,47 @@ int main(int argc, char **argv)
 
     static Offscreen_Buffer target(640, 480);
 
-    // x0,y0,x1,y1
-    // xoff/yoff are the offset it pixel space from the glyph origin to the top-left of the bitmap
-    // <current_point+SF*x0, baseline+SF*y0> to <current_point+SF*x1,baseline+SF*y1)
-
-    int baseline = 20;
-    int current_point = 20;
-
-
-#if 0
-    int cursor_x_pos = 10, cursor_y_pos = 10;
+    int current_point_x = 150;
+    int current_point_y = 120;  // this is also the baseline
 
     for (int i = 0; lorem[i]; ++i) {
+        //
+        // glyph
+        //
+        char c = lorem[i];
+        auto glyph = ttfchars[c];
+        {   
+            int w = glyph.x1 - glyph.x0;
+            int h = glyph.y1 - glyph.y0;
+            printf("%c : %03d  ***** xoff: %-2.f / yoff: %-2.f ***** w: %d / h: %d\n",
+                c, c, glyph.xoff, glyph.yoff, w, h);
+            for (int row = 0; row < h; ++row) {
 
-        auto glyph = ttfchars[lorem[i]];
-        int w = glyph.x1 - glyph.x0;
-        int h = glyph.y1 - glyph.y0;
-        printf("%c : %03d  ***** xoff: %-2.f / yoff: %-2.f ***** w: %d / h: %d\n",
-            lorem[i], lorem[i], glyph.xoff, glyph.yoff, w, h);
-        // printf("width  of glyph: %d\n", w);
-        // printf("height of glyph: %d\n", h);
+                u8 *src = bakedfont.at(glyph.x0, (glyph.y0)+row);
+                u8 *dest = target.at(current_point_x+glyph.xoff, current_point_y+glyph.yoff+row);
 
-        for (int row = 0; row < h; ++row) {
-
-            u8 *src = bakedfont.at(glyph.x0, glyph.y0+row);
-            u8 *dest = target.at(cursor_x_pos, cursor_y_pos+row);
-
-            for (int col = 0; col < w; ++col)
-                dest[col] = src[col];
+                for (int col = 0; col < w; ++col)
+                    dest[col] = src[col];
+            }
         }
-
-        // bounding box
+        //
+        // current point
+        //
         {
-            u8 *dest = target.at(cursor_x_pos, cursor_y_pos);
-            for (int col = 0; col < w; ++col) dest[col] = 255;
+            auto at = target.at(0, current_point_y);
+            for (int col = 0; col < target.w; ++col) {
+                at[col] = 80;
+            }
         }
-
         {
-            u8 *dest = target.at(cursor_x_pos, cursor_y_pos+h);
-            for (int col = 0; col < w; ++col) dest[col] = 255;
+            for (int row = 0; row < target.w; ++row) {
+                auto at = target.at(current_point_x, row);
+                *at = 80;
+            }
         }
 
-        cursor_x_pos += glyph.xadvance;
+        current_point_x += glyph.xadvance;
     }
-#endif
 
 
     stbi_write_bmp("output.bmp", target.w, target.h, target.comp, target.data);
