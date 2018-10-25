@@ -22,34 +22,33 @@ typedef uint8_t u8;
 constexpr int globalw = 640, globalh = 480, globalcomp = 1;
 static u8 global_pixel_buffer[globalw*globalh*globalcomp];
 
+
+// STBTT_DEF int stbtt_BakeFontBitmap(
+//     const unsigned char *data, int offset,  // font location (use offset=0 for plain .ttf)
+//     float pixel_height,                     // height of font in pixels
+//     unsigned char *pixels, int pw, int ph,  // bitmap to be filled in
+//     int first_char, int num_chars,          // characters to bake
+//     stbtt_bakedchar *chardata);             // you allocate this, it's num_chars long
+
+
+
 int main(int argc, char **argv)
 {
 
-    auto fontfile = fopen("UbuntuMono-R.ttf", "r");
-    fseek(fontfile, 0, SEEK_END);
-    auto filesize = ftell(fontfile);
-    fseek(fontfile, 0, SEEK_SET);
-    auto font_buffer = (const unsigned char*)malloc(filesize);
-    fclose(fontfile);
+    auto ttffile = fopen("UbuntuMono-R.ttf", "rb");
+    fseek(ttffile, 0, SEEK_END);
+    auto filesize = ftell(ttffile);
+    printf("font filesize: %d\n", filesize);
+    fseek(ttffile, 0, SEEK_SET);
+    auto ttf_buffer = (const unsigned char*)malloc(filesize);
+    fread((void *)ttf_buffer, 1, filesize, ttffile);
+    fclose(ttffile);
 
     stbtt_fontinfo fontinfo;
-    auto rc =
-        stbtt_InitFont(
+    Assert(stbtt_InitFont(
             &fontinfo,
-            font_buffer,
-            0 // stbtt_GetFontOffsetForIndex(font_buffer, 0)
-        );
-    Assert(rc);
-
-    int w = globalw, h = globalh, comp = globalcomp;
-
-    // Gray Background
-    u8 *at = global_pixel_buffer;
-    for (int row = 0; row < globalh; ++row) {
-        
-        for (int col = 0; col < globalw; ++col)
-            *at++ = 100;
-    }
+            ttf_buffer,
+            stbtt_GetFontOffsetForIndex(ttf_buffer, 0)));
 
 
     stbi_write_bmp("output.bmp", w, h, 1, global_pixel_buffer);
