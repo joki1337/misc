@@ -59,85 +59,91 @@ void draw_line(u8 *buffer, int w, int h, int x0, int y0, int x1, int y1)
     }
 }
 
-const char lorem[] = "Lorem ipsum dolor";
-
-int main(int argc, char **argv)
+struct Loaded_Font
 {
-
-    static u8 ttf_buffer[Megabytes(1)];
-    fread((void *)ttf_buffer, 1, Megabytes(1), fopen("UbuntuMono-R.ttf", "rb"));
-
     stbtt_fontinfo fontinfo;
-    Assert(stbtt_InitFont(
-            &fontinfo,
-            ttf_buffer,
-            stbtt_GetFontOffsetForIndex(ttf_buffer, 0)));
-    printf("number of glyphs in ttf: %d\n", fontinfo.numGlyphs);
+    stbtt_bakedchar ttfchars[1000];
+    u8 *ttf_data;
+    Offscreen_Buffer *bakedfont;
 
-    Offscreen_Buffer bakedfont(2000, 2000);
+    Loaded_Font(const char *font_filepath)
+    {
+        ttf_data = (u8*)malloc(Megabytes(1)); Assert(ttf_data);
+        fread((void *)ttf_data, 1, Megabytes(1), fopen(font_filepath, "rb"));
+
+        Assert(stbtt_InitFont(
+                &fontinfo,
+                ttf_data,
+                stbtt_GetFontOffsetForIndex(ttf_data, 0)));
+        printf("number of glyphs in ttf: %d\n", fontinfo.numGlyphs);
+
+        bakedfont = new Offscreen_Buffer(1024, 1024);
+
+        float font_hight_in_pixels = 40.0f;
+        auto font_scaling_factor = stbtt_ScaleForPixelHeight(&fontinfo, font_hight_in_pixels);
+        printf("font scale %f (hight in pixels: %f)\n", font_scaling_factor, font_hight_in_pixels);
+
+        int ascent, descent, lineGap;
+        stbtt_GetFontVMetrics(&fontinfo, &ascent, &descent, &lineGap);
+        printf("vertical advance should be: %f", (ascent - descent + lineGap)*font_scaling_factor);
 
 
-    stbtt_bakedchar ttfchars[fontinfo.numGlyphs];
+        Assert(stbtt_BakeFontBitmap(
+            ttf_data, 0,
+            font_hight_in_pixels,
+            (unsigned char*)bakedfont->data,
+            bakedfont->w,
+            bakedfont->h,
+            0, 255,
+            ttfchars) > 0);
 
-    float font_scale = 40.0f;
+        stbi_write_bmp("font_test.bmp", bakedfont->w, bakedfont->h, bakedfont->comp, bakedfont->data);
 
-    Assert(stbtt_BakeFontBitmap(
-        ttf_buffer, 0,
-        font_scale,
-        (unsigned char*)bakedfont.data,
-        bakedfont.w,
-        bakedfont.h,
-        0, 255,
-        ttfchars) > 0);
+    }
+};
 
-    stbi_write_bmp("font.bmp", bakedfont.w, bakedfont.h, bakedfont.comp, bakedfont.data);
+void draw_text(Offscreen_Buffer *target, const char *text, int cursor_x, int cursor_y, const Loaded_Font *font)
+{
+    for (int i = 0; text[i]; ++i) {
 
-    Offscreen_Buffer target(640, 250);
-
-    int current_point_x = 100;
-    int current_point_y = 120;  // this is also the baseline
-
-    draw_line(
-        (u8*)target.data, target.w, target.h,
-        0, 0, target.w, target.h);
-#if 1
-    for (int i = 0; lorem[i]; ++i) {
-        //
-        // glyph
-        //
-        char c = lorem[i];
-        auto glyph = ttfchars[c];
+        char c = text[i];
+        auto glyph = font->ttfchars[c];
         {
             int w = glyph.x1 - glyph.x0;
             int h = glyph.y1 - glyph.y0;
             printf("%c : %03d  ***** xoff: %-2.f / yoff: %-2.f ***** w: %d / h: %d\n",
                 c, c, glyph.xoff, glyph.yoff, w, h);
+
             for (int row = 0; row < h; ++row) {
 
-                u8 *src = bakedfont.at(glyph.x0, (glyph.y0)+row);
-                u8 *dest = target.at(current_point_x+glyph.xoff, current_point_y+glyph.yoff+row);
-
+                u8 *src = font->bakedfont->at(glyph.x0, (glyph.y0)+row);
+                u8 *at = target->at(cursor_x+glyph.xoff, cursor_y+glyph.yoff+row);
                 for (int col = 0; col < w; ++col) {
-                    dest[col] = src[col];
+                    at[col] = src[col];
                 }
             }
         }
-        //
-        // current point
-        //
-        draw_line(
-            (u8*)target.data, target.w, target.h,
-            0, current_point_y, target.w, current_point_y);
-        draw_line(
-            (u8*)target.data, target.w, target.h,
-            0, current_point_y+2, target.w, current_point_y+2);
-        draw_line(
-            (u8*)target.data, target.w, target.h,
-            current_point_x, 0, current_point_x, target.h);
 
-        current_point_x += glyph.xadvance;
+        // visualize baseline
+        draw_line((u8*)target->data, target->w, target->h, 0, cursor_y,   target->w, cursor_y);
+        draw_line((u8*)target->data, target->w, target->h, 0, cursor_y+2, target->w, cursor_y+2);
+
+        cursor_x += glyph.xadvance;
     }
-#endif
+}
+
+int main(int argc, char **argv)
+{
+    Loaded_Font font("UbuntuMono-R.ttf");
+
+
+    Offscreen_Buffer target(640, 250);
+
+    draw_text(&target, "Moin1337!!!!", 50, 50, &font);
+    draw_text(&target, "Lorem ipsum dolor", 100, 120, &font);
+
+    // diagonal line
+    draw_line((u8*)target.data, target.w, target.h, 0, 0, target.w, target.h);
 
     stbi_write_bmp("output.bmp", target.w, target.h, target.comp, target.data);
 }
