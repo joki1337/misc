@@ -1,2 +1,4 @@
 *.sublime-workspace
 a.out
+*.exe
+*.bmp
