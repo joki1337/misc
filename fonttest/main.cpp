@@ -1,15 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdint.h>
 
-typedef uint8_t u8;
-
-#define Assert(Expression) if(!(Expression)) {*(int *)0 = 0;}
-
-#define Kilobytes(Value) ((Value)*1024LL)
-#define Megabytes(Value) (Kilobytes(Value)*1024LL)
-#define Gigabytes(Value) (Megabytes(Value)*1024LL)
-#define Terabytes(Value) (Gigabytes(Value)*1024LL)
+#include "default.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
@@ -19,25 +11,26 @@ typedef uint8_t u8;
 
 struct Offscreen_Buffer
 {
-    int w, h, comp = 1;
+    int w, h, stride, comp = 1;
     void *data;
 
     Offscreen_Buffer(int _w, int _h) : w(_w), h(_h)
     {
         auto required_size = w*h*comp;
+        stride = w*comp;
         data = malloc(required_size);
         Assert(data);
-        memset(data, 0, required_size);
+        memset(data, 80, required_size);
     }
 
     u8* at(int x, int y)
     {
         auto start = (u8*)data;
-        return start + (w*comp*y) + x;
+        return start + (stride*y) + x;
     }
 };
 
-void draw_line(u8 *buffer, int w, int h, int x0, int y0, int x1, int y1)
+void _draw_line(u8 *buffer, int w, int h, int x0, int y0, int x1, int y1)
 {
     // printf("\ndrawing line (%d/%d) -> (%d/%d)\n", x0, y0, x1, y1);
 
@@ -58,6 +51,12 @@ void draw_line(u8 *buffer, int w, int h, int x0, int y0, int x1, int y1)
         if (e2 < dx) { err += dx; y0 += sy; } /* e_xy+e_y < 0 */
     }
 }
+
+void draw_line(Offscreen_Buffer *ob, int x0, int y0, int x1, int y1)
+{
+    _draw_line((u8*)ob->data, ob->w, ob->h, x0, y0, x1, y1);
+}
+
 
 struct Loaded_Font
 {
@@ -102,6 +101,7 @@ struct Loaded_Font
     }
 };
 
+
 void draw_text(Offscreen_Buffer *target, const char *text, int cursor_x, int cursor_y, const Loaded_Font *font)
 {
     for (int i = 0; text[i]; ++i) {
@@ -118,15 +118,19 @@ void draw_text(Offscreen_Buffer *target, const char *text, int cursor_x, int cur
 
                 u8 *src = font->bakedfont->at(glyph.x0, (glyph.y0)+row);
                 u8 *at = target->at(cursor_x+glyph.xoff, cursor_y+glyph.yoff+row);
+
                 for (int col = 0; col < w; ++col) {
-                    at[col] = src[col];
+
+                    float alpha = src[col] / 255.0f;
+                    at[col] = (u8)lerp(at[col], src[col], alpha);
+
                 }
             }
         }
 
         // visualize baseline
-        draw_line((u8*)target->data, target->w, target->h, 0, cursor_y,   target->w, cursor_y);
-        draw_line((u8*)target->data, target->w, target->h, 0, cursor_y+2, target->w, cursor_y+2);
+        draw_line(target, 0, cursor_y,   target->w, cursor_y);
+        draw_line(target, 0, cursor_y+2, target->w, cursor_y+2);
 
         cursor_x += glyph.xadvance;
     }
@@ -141,9 +145,6 @@ int main(int argc, char **argv)
 
     draw_text(&target, "Moin1337!!!!", 50, 50, &font);
     draw_text(&target, "Lorem ipsum dolor", 100, 120, &font);
-
-    // diagonal line
-    draw_line((u8*)target.data, target.w, target.h, 0, 0, target.w, target.h);
 
     stbi_write_bmp("output.bmp", target.w, target.h, target.comp, target.data);
 }
