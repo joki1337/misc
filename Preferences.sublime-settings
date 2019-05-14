@@ -15,5 +15,6 @@
 	"show_line_endings": true,
 	"default_line_ending": "unix",
 	"show_definitions": false,
-	"translate_tabs_to_spaces": true
+	"translate_tabs_to_spaces": true,
+	"rulers": [79]
 }
